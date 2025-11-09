@@ -190,11 +190,38 @@ This shard uses direct C bindings to OpenSSL's `EVP_CIPHER_CTX_ctrl` function to
 - `EVP_CTRL_GCM_GET_TAG` (0x10) - Get authentication tag after encryption
 - `EVP_CTRL_GCM_SET_IVLEN` (0x9) - Set custom IV length
 
+**Note on Linking**: We don't use `@[Link("crypto")]` in our C bindings because Crystal's OpenSSL module already links to libcrypto. Adding it would cause duplicate library warnings on macOS and other platforms.
+
 ## Limitations
 
 1. **AAD Support**: Additional Authenticated Data (AAD) support is limited in the current version due to Crystal's OpenSSL wrapper not exposing the necessary update methods.
 
 2. **Algorithm**: Only AES-256-GCM is supported. Other GCM variants (AES-128-GCM, AES-192-GCM) could be added in future versions.
+
+## Troubleshooting
+
+### "ld: warning: ignoring duplicate libraries: '-lcrypto'" on macOS
+
+This warning has been fixed in version 0.1.0. If you see this warning in older versions, it's because Crystal's OpenSSL module already links to libcrypto. The warning is harmless but can be fixed by removing the `@[Link("crypto")]` annotation.
+
+### Decryption fails with "authentication verification failed"
+
+This error means:
+- Wrong encryption key
+- Data has been tampered with
+- Wrong AAD was used
+- Corrupted ciphertext or auth tag
+
+Double-check your key and ensure the same AAD is used for both encryption and decryption.
+
+### "Key must be 32 bytes" error
+
+AES-256 requires exactly 32 bytes (256 bits) for the key. Ensure your key string is exactly 32 bytes:
+
+```crystal
+key = "12345678901234567890123456789012"  # Exactly 32 bytes
+puts key.bytesize  # Should print 32
+```
 
 ## Contributing
 

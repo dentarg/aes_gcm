@@ -33,7 +33,8 @@ module AesGcm
   VERSION = "0.1.0"
 
   # Low-level bindings to OpenSSL's EVP_CIPHER_CTX_ctrl function
-  @[Link("crypto")]
+  # Note: We don't need @[Link("crypto")] here because Crystal's OpenSSL module
+  # already links to libcrypto. Adding it would cause duplicate library warnings.
   lib LibCrypto
     EVP_CTRL_GCM_SET_TAG    = 0x11
     EVP_CTRL_GCM_GET_TAG    = 0x10
