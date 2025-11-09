@@ -1,0 +1,13 @@
+name: aes_gcm
+version: 0.1.0
+
+authors:
+  - Your Name <your.email@example.com>
+
+crystal: ">= 1.0.0"
+
+license: MIT
+
+description: |
+  A Crystal shard providing AES-256-GCM authenticated encryption and decryption.
+  Includes support for authentication tags and additional authenticated data (AAD).
