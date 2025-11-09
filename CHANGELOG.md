@@ -11,9 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of AES-GCM shard
 - AES-256-GCM encryption and decryption support
 - Authentication tag support via direct OpenSSL C bindings
+- **Sequel column encryption module** - `AesGcm::SequelColumnEncryption` for decrypting Ruby sequel-column-encryption data
+  - `decrypt()` - Simple decryption
+  - `decrypt_with_info()` - Decryption with format metadata
+  - `valid_format?()` - Validate Sequel format without decryption
 - Base64 encoding/decoding helpers
 - `EncryptedData` struct for managing encrypted data components
-- Comprehensive test suite (11 specs)
+- Comprehensive test suite (29 specs)
 - Examples for basic usage and Sequel column encryption
 - Full documentation with security best practices
 

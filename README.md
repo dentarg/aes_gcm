@@ -6,10 +6,12 @@ A Crystal shard providing AES-256-GCM (Galois/Counter Mode) authenticated encryp
 
 - ✅ AES-256-GCM encryption and decryption
 - ✅ Authentication tag support (protects against tampering)
+- ✅ **Sequel column encryption support** - Decrypt Ruby sequel-column-encryption data
 - ✅ Configurable IV and tag sizes
 - ✅ Base64 encoding/decoding helpers
 - ✅ Direct bindings to OpenSSL for full GCM support
 - ✅ Type-safe API with Crystal's type system
+- ✅ 29 comprehensive specs
 
 ## Why This Shard?
 
@@ -32,6 +34,32 @@ shards install
 ```
 
 ## Usage
+
+### Sequel Column Encryption (Quick Start)
+
+If you're working with Ruby's `sequel-column-encryption` gem, you can decrypt data with one line:
+
+```crystal
+require "aes_gcm"
+
+key = ENV["SEQUEL_COLUMN_ENCRYPTION_KEY"]
+encrypted = "AAAAAM4LImpq..." # Base64 encoded encrypted data
+
+# Simple decryption
+plaintext = AesGcm::SequelColumnEncryption.decrypt(encrypted, key)
+puts plaintext  # => "John Doe"
+
+# Decryption with metadata
+info = AesGcm::SequelColumnEncryption.decrypt_with_info(encrypted, key)
+puts info[:plaintext]  # => "John Doe"
+puts info[:format]     # => "not_searchable"
+puts info[:searchable] # => false
+
+# Validate format
+if AesGcm::SequelColumnEncryption.valid_format?(encrypted)
+  puts "Valid Sequel encrypted data"
+end
+```
 
 ### Basic Encryption/Decryption
 
@@ -110,6 +138,36 @@ cipher = AesGcm::Cipher.new(
 ```
 
 ## API Documentation
+
+### `AesGcm::SequelColumnEncryption`
+
+Module for decrypting data encrypted with Ruby's sequel-column-encryption gem.
+
+#### Methods
+
+- `decrypt(data_base64 : String, key : String | Bytes, remove_padding : Bool = true) : String`
+  - Decrypts Sequel column encryption format data
+  - `data_base64`: Base64-encoded encrypted data
+  - `key`: Encryption key (32 bytes for the master key)
+  - `remove_padding`: Remove Sequel padding (default: true)
+  - Returns decrypted plaintext as String
+  - Raises `DecryptionError` if decryption fails
+
+- `decrypt_with_info(data_base64 : String, key : String | Bytes) : NamedTuple`
+  - Decrypts and returns metadata about the encryption format
+  - Returns: `{plaintext, flags, key_id, searchable, format}`
+  - Example:
+    ```crystal
+    info = AesGcm::SequelColumnEncryption.decrypt_with_info(encrypted, key)
+    info[:plaintext]  # => "John Doe"
+    info[:format]     # => "not_searchable"
+    info[:searchable] # => false
+    ```
+
+- `valid_format?(data_base64 : String) : Bool`
+  - Checks if data appears to be in Sequel encryption format
+  - Does not attempt decryption, only validates structure
+  - Returns true if data has valid Sequel format
 
 ### `AesGcm::Cipher`
 

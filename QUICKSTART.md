@@ -15,6 +15,23 @@ dependencies:
 
 ## Basic Usage
 
+### Sequel Column Encryption (Most Common)
+
+If you're migrating from Ruby and need to decrypt sequel-column-encryption data:
+
+```crystal
+require "aes_gcm"
+
+key = ENV["SEQUEL_COLUMN_ENCRYPTION_KEY"]
+encrypted = "AAAAAM4LImpq..." # Your encrypted data
+
+# Simple one-liner
+plaintext = AesGcm::SequelColumnEncryption.decrypt(encrypted, key)
+puts plaintext  # => "John Doe"
+```
+
+### General AES-256-GCM Encryption
+
 ```crystal
 require "aes_gcm"
 
