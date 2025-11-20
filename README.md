@@ -42,16 +42,16 @@ If you're working with the [Sequel `column_encryption` plugin](https://github.co
 ```crystal
 require "aes_gcm"
 
-key = ENV["SEQUEL_COLUMN_ENCRYPTION_KEY"]
-encrypted = "AAAAAM4LImpq..." # Base64 encoded encrypted data
+key = "e74aaac7a0b7f97159bb787dd593a3cb" # Your 32-byte (256-bit) encryption key
+encrypted = "AAAAAGqIftnXqY76h5bbGh4pnmN8tNsfzGfw4sJcvWkmnRV46FuG762BI0vjoC7quADZ48Su-NfQiHoYHXwuV3v8rPlsM69rREkYReE11m9Y" # Base64 encoded encrypted data
 
 # Simple decryption
 plaintext = AesGcm::SequelColumnEncryption.decrypt(encrypted, key)
-puts plaintext  # => "John Doe"
+puts plaintext  # => "Hello, World!"
 
 # Decryption with metadata
 info = AesGcm::SequelColumnEncryption.decrypt_with_info(encrypted, key)
-puts info[:plaintext]  # => "John Doe"
+puts info[:plaintext]  # => "Hello, World!"
 puts info[:format]     # => "not_searchable"
 puts info[:searchable] # => false
 
@@ -68,8 +68,7 @@ require "aes_gcm"
 
 cipher = AesGcm::Cipher.new
 
-# Your 32-byte (256-bit) encryption key
-key = "12345678901234567890123456789012"
+key = "e74aaac7a0b7f97159bb787dd593a3cb"
 plaintext = "Hello, World!"
 
 # Encrypt
@@ -79,8 +78,8 @@ encrypted = cipher.encrypt(
 )
 
 # Access encrypted components
-puts encrypted.iv.hexstring        # Initialization vector
-puts encrypted.auth_tag.hexstring  # Authentication tag
+puts encrypted.iv.hexstring         # Initialization vector
+puts encrypted.auth_tag.hexstring   # Authentication tag
 puts encrypted.ciphertext.hexstring # Encrypted data
 
 # Decrypt
@@ -91,8 +90,10 @@ puts String.new(decrypted)  # "Hello, World!"
 ### Base64 Encoding
 
 ```crystal
+require "aes_gcm"
+
 cipher = AesGcm::Cipher.new
-key = "12345678901234567890123456789012"
+key = "e74aaac7a0b7f97159bb787dd593a3cb"
 
 # Encrypt and encode to base64
 encoded = cipher.encrypt_base64(
