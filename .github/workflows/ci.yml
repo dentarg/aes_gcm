@@ -1,0 +1,21 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+    container: 84codes/crystal:latest-ubuntu-noble
+    steps:
+      - uses: actions/checkout@v5
+      - run: shards install
+      - run: crystal spec --order random
+
+  format:
+    runs-on: ubuntu-latest
+    container: 84codes/crystal:latest-ubuntu-noble
+    steps:
+      - uses: actions/checkout@v5
+      - run: crystal tool format --check
