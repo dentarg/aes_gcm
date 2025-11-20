@@ -36,16 +36,16 @@ module AesGcm
   lib LibCrypto
     EVP_CTRL_GCM_SET_TAG    = 0x11
     EVP_CTRL_GCM_GET_TAG    = 0x10
-    EVP_CTRL_GCM_SET_IVLEN  = 0x9
+    EVP_CTRL_GCM_SET_IVLEN  =  0x9
     EVP_CTRL_AEAD_SET_TAG   = 0x11
     EVP_CTRL_AEAD_GET_TAG   = 0x10
-    EVP_CTRL_AEAD_SET_IVLEN = 0x9
+    EVP_CTRL_AEAD_SET_IVLEN =  0x9
 
     fun evp_cipher_ctx_ctrl = EVP_CIPHER_CTX_ctrl(
       ctx : Void*,
       type : Int32,
       arg : Int32,
-      ptr : Void*
+      ptr : Void*,
     ) : Int32
   end
 
@@ -88,9 +88,9 @@ module AesGcm
 
   # Main cipher class for AES-256-GCM operations
   class Cipher
-    property iv_size : Int32 = 12      # 96-bit IV (recommended for GCM)
-    property tag_size : Int32 = 16     # 128-bit tag
-    property key_size : Int32 = 32     # 256-bit key
+    property iv_size : Int32 = 12  # 96-bit IV (recommended for GCM)
+    property tag_size : Int32 = 16 # 128-bit tag
+    property key_size : Int32 = 32 # 256-bit key
 
     def initialize(@iv_size = 12, @tag_size = 16, @key_size = 32)
     end
@@ -106,7 +106,7 @@ module AesGcm
     def encrypt(
       key : String | Bytes,
       plaintext : String | Bytes,
-      iv : Bytes? = nil
+      iv : Bytes? = nil,
     ) : EncryptedData
       # Convert inputs to bytes
       key_bytes = key.is_a?(String) ? key.to_slice : key
@@ -201,7 +201,7 @@ module AesGcm
     # Helper method to encrypt and return base64-encoded string
     def encrypt_base64(
       key : String | Bytes,
-      plaintext : String | Bytes
+      plaintext : String | Bytes,
     ) : String
       encrypted = encrypt(key: key, plaintext: plaintext)
       encrypted.to_base64
@@ -210,7 +210,7 @@ module AesGcm
     # Helper method to decrypt from base64-encoded string
     def decrypt_base64(
       encoded : String,
-      key : String | Bytes
+      key : String | Bytes,
     ) : Bytes
       encrypted = EncryptedData.from_base64(encoded, key, @iv_size, @tag_size)
       decrypt(encrypted)
@@ -388,8 +388,7 @@ module AesGcm
       flags: UInt8,
       key_id: UInt8,
       searchable: Bool,
-      format: String
-    )
+      format: String)
       # Decode to get header info
       data = Base64.decode(data_base64.tr("-_", "+/"))
 
