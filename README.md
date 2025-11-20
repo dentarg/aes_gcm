@@ -37,7 +37,7 @@ shards install
 
 ### Sequel Column Encryption (Quick Start)
 
-If you're working with Ruby's `sequel-column-encryption` gem, you can decrypt data with one line:
+If you're working with the [Sequel `column_encryption` plugin](https://github.com/jeremyevans/sequel/blob/5.98.0/lib/sequel/plugins/column_encryption.rb) in Ruby, you can decrypt data with one line:
 
 ```crystal
 require "aes_gcm"
