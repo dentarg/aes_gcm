@@ -109,24 +109,6 @@ decoded = cipher.decrypt_base64(
 puts String.new(decoded)
 ```
 
-### Additional Authenticated Data (AAD)
-
-*Note: AAD support is limited in the current version due to Crystal's OpenSSL wrapper limitations.*
-
-```crystal
-# Future API (not fully implemented yet)
-encrypted = cipher.encrypt(
-  key: key,
-  plaintext: "secret",
-  aad: "metadata"
-)
-
-decrypted = cipher.decrypt(
-  encrypted,
-  aad: "metadata"  # Must match encryption AAD
-)
-```
-
 ### Custom Configuration
 
 ```crystal
@@ -176,24 +158,23 @@ Main cipher class for AES-256-GCM operations.
 
 #### Methods
 
-- `encrypt(key, plaintext, iv = nil, aad = "") : EncryptedData`
+- `encrypt(key, plaintext, iv = nil) : EncryptedData`
   - Encrypts plaintext and returns encrypted data with IV and auth tag
   - `key`: 32-byte encryption key (String or Bytes)
   - `plaintext`: Data to encrypt (String or Bytes)
   - `iv`: Optional IV (defaults to random)
-  - `aad`: Additional authenticated data (not yet fully supported)
 
-- `decrypt(key, ciphertext, iv, auth_tag, aad = "") : Bytes`
+- `decrypt(key, ciphertext, iv, auth_tag) : Bytes`
   - Decrypts ciphertext and verifies authenticity
   - Raises `OpenSSL::Cipher::Error` if authentication fails
 
-- `decrypt(encrypted : EncryptedData, aad = "") : Bytes`
+- `decrypt(encrypted : EncryptedData) : Bytes`
   - Convenience method to decrypt from EncryptedData struct
 
-- `encrypt_base64(key, plaintext, aad = "") : String`
+- `encrypt_base64(key, plaintext) : String`
   - Encrypts and returns URL-safe base64 encoded string
 
-- `decrypt_base64(encoded, key, aad = "") : Bytes`
+- `decrypt_base64(encoded, key) : Bytes`
   - Decrypts from URL-safe base64 encoded string
 
 ### `AesGcm::EncryptedData`
@@ -219,7 +200,6 @@ Struct containing all components needed for decryption.
 2. **Authentication**: GCM mode provides authenticated encryption. If decryption fails with a `OpenSSL::Cipher::Error`, it means:
    - The data was tampered with
    - Wrong encryption key was used
-   - Wrong AAD was used
    - Data is corrupted
 
 3. **IV Reuse**: Never reuse the same IV with the same key. This implementation generates random IVs by default.
@@ -253,7 +233,7 @@ This shard uses direct C bindings to OpenSSL's `EVP_CIPHER_CTX_ctrl` function to
 
 ## Limitations
 
-1. **AAD Support**: Additional Authenticated Data (AAD) support is limited in the current version due to Crystal's OpenSSL wrapper not exposing the necessary update methods.
+1. **AAD is not supported**: Additional Authenticated Data (AAD) is not supported.
 
 2. **Algorithm**: Only AES-256-GCM is supported. Other GCM variants (AES-128-GCM, AES-192-GCM) could be added in future versions.
 
@@ -268,10 +248,7 @@ This warning has been fixed in version 0.1.0. If you see this warning in older v
 This error means:
 - Wrong encryption key
 - Data has been tampered with
-- Wrong AAD was used
 - Corrupted ciphertext or auth tag
-
-Double-check your key and ensure the same AAD is used for both encryption and decryption.
 
 ### "Key must be 32 bytes" error
 

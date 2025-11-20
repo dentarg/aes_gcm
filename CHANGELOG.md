@@ -32,13 +32,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generates cryptographically secure random IVs by default
 
 ### Known Limitations
-- Limited AAD (Additional Authenticated Data) support due to Crystal's OpenSSL wrapper
+- No AAD (Additional Authenticated Data) support
 - Only supports AES-256-GCM (not AES-128-GCM or AES-192-GCM)
-
-## [Unreleased]
-
-### Planned
-- Full AAD support with custom C bindings
-- Support for AES-128-GCM and AES-192-GCM variants
-- Streaming encryption/decryption for large files
-- Performance benchmarks

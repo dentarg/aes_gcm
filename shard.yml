@@ -10,4 +10,4 @@ license: MIT
 
 description: |
   A Crystal shard providing AES-256-GCM authenticated encryption and decryption.
-  Includes support for authentication tags and additional authenticated data (AAD).
+  Includes support for authentication tags.

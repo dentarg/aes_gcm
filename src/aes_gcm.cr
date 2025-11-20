@@ -16,8 +16,7 @@ require "base64"
 # # Encryption
 # encrypted = cipher.encrypt(
 #   key: "32_byte_key_here_____________",
-#   plaintext: "secret message",
-#   aad: "additional authenticated data"
+#   plaintext: "secret message"
 # )
 #
 # # Decryption
@@ -25,8 +24,7 @@ require "base64"
 #   key: encrypted.key,
 #   ciphertext: encrypted.ciphertext,
 #   iv: encrypted.iv,
-#   auth_tag: encrypted.auth_tag,
-#   aad: "additional authenticated data"
+#   auth_tag: encrypted.auth_tag
 # )
 # ```
 module AesGcm
@@ -103,19 +101,16 @@ module AesGcm
     # - key: 32-byte encryption key (String or Bytes)
     # - plaintext: Data to encrypt (String or Bytes)
     # - iv: Optional initialization vector (defaults to random)
-    # - aad: Optional additional authenticated data (not encrypted, but authenticated)
     #
     # Returns: EncryptedData containing ciphertext, iv, auth_tag, and key
     def encrypt(
       key : String | Bytes,
       plaintext : String | Bytes,
-      iv : Bytes? = nil,
-      aad : String | Bytes = ""
+      iv : Bytes? = nil
     ) : EncryptedData
       # Convert inputs to bytes
       key_bytes = key.is_a?(String) ? key.to_slice : key
       plaintext_bytes = plaintext.is_a?(String) ? plaintext.to_slice : plaintext
-      aad_bytes = aad.is_a?(String) ? aad.to_slice : aad
 
       # Validate key size
       if key_bytes.size != @key_size
@@ -130,11 +125,6 @@ module AesGcm
       cipher.encrypt
       cipher.key = key_bytes
       cipher.iv = iv_bytes
-
-      # Set AAD if provided (must be done before encryption)
-      unless aad_bytes.empty?
-        set_aad(cipher, aad_bytes)
-      end
 
       # Encrypt
       ciphertext = IO::Memory.new
@@ -159,7 +149,6 @@ module AesGcm
     # - ciphertext: Encrypted data (Bytes)
     # - iv: Initialization vector used during encryption
     # - auth_tag: Authentication tag from encryption
-    # - aad: Optional additional authenticated data (must match encryption)
     #
     # Returns: Decrypted data as Bytes
     # Raises: OpenSSL::Cipher::Error if authentication fails or data is corrupted
@@ -168,11 +157,9 @@ module AesGcm
       ciphertext : Bytes,
       iv : Bytes,
       auth_tag : Bytes,
-      aad : String | Bytes = ""
     ) : Bytes
       # Convert inputs to bytes
       key_bytes = key.is_a?(String) ? key.to_slice : key
-      aad_bytes = aad.is_a?(String) ? aad.to_slice : aad
 
       # Validate key size
       if key_bytes.size != @key_size
@@ -188,11 +175,6 @@ module AesGcm
       # Set authentication tag (must be done before decryption)
       set_auth_tag(cipher, auth_tag)
 
-      # Set AAD if provided (must be done before decryption)
-      unless aad_bytes.empty?
-        set_aad(cipher, aad_bytes)
-      end
-
       # Decrypt
       begin
         plaintext = IO::Memory.new
@@ -201,40 +183,37 @@ module AesGcm
         plaintext.to_slice
       rescue ex : OpenSSL::Cipher::Error
         raise OpenSSL::Cipher::Error.new(
-          "Decryption failed: authentication verification failed (corrupted data or wrong key/AAD)"
+          "Decryption failed: authentication verification failed (corrupted data or wrong key)"
         )
       end
     end
 
     # Decrypt from EncryptedData struct
-    def decrypt(encrypted : EncryptedData, aad : String | Bytes = "") : Bytes
+    def decrypt(encrypted : EncryptedData) : Bytes
       decrypt(
         key: encrypted.key,
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
-        auth_tag: encrypted.auth_tag,
-        aad: aad
+        auth_tag: encrypted.auth_tag
       )
     end
 
     # Helper method to encrypt and return base64-encoded string
     def encrypt_base64(
       key : String | Bytes,
-      plaintext : String | Bytes,
-      aad : String | Bytes = ""
+      plaintext : String | Bytes
     ) : String
-      encrypted = encrypt(key: key, plaintext: plaintext, aad: aad)
+      encrypted = encrypt(key: key, plaintext: plaintext)
       encrypted.to_base64
     end
 
     # Helper method to decrypt from base64-encoded string
     def decrypt_base64(
       encoded : String,
-      key : String | Bytes,
-      aad : String | Bytes = ""
+      key : String | Bytes
     ) : Bytes
       encrypted = EncryptedData.from_base64(encoded, key, @iv_size, @tag_size)
-      decrypt(encrypted, aad)
+      decrypt(encrypted)
     end
 
     # Set the authentication tag on the cipher (for decryption)
@@ -268,17 +247,6 @@ module AesGcm
       end
 
       tag
-    end
-
-    # Set additional authenticated data (AAD) on the cipher
-    # This must be called before update() during encryption or decryption
-    private def set_aad(cipher : OpenSSL::Cipher, aad : Bytes) : Nil
-      # In GCM mode, AAD is set by calling update() with the AAD before
-      # calling update() with the actual plaintext/ciphertext
-      # However, Crystal's OpenSSL wrapper doesn't expose this directly
-      # For now, we'll skip AAD support in the basic implementation
-      # A full implementation would need to call EVP_EncryptUpdate/EVP_DecryptUpdate
-      # with the AAD before processing the actual data
     end
   end
 
