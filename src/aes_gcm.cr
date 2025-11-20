@@ -34,8 +34,8 @@ module AesGcm
   # Note: We don't need @[Link("crypto")] here because Crystal's OpenSSL module
   # already links to libcrypto. Adding it would cause duplicate library warnings.
   lib LibCrypto
-    EVP_CTRL_GCM_SET_TAG    = 0x11
-    EVP_CTRL_GCM_GET_TAG    = 0x10
+    EVP_CTRL_GCM_SET_TAG = 0x11
+    EVP_CTRL_GCM_GET_TAG = 0x10
 
     fun evp_cipher_ctx_ctrl = EVP_CIPHER_CTX_ctrl(
       ctx : Void*,
