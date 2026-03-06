@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: 84codes/crystal:latest-ubuntu-noble
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: shards install
       - run: crystal spec --order random
 
@@ -17,5 +17,5 @@ jobs:
     runs-on: ubuntu-latest
     container: 84codes/crystal:latest-ubuntu-noble
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: crystal tool format --check
