@@ -1,0 +1,16 @@
+/docs/
+/lib/
+/bin/
+/.shards/
+*.dwarf
+
+# Crystal cache
+.crystal/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
