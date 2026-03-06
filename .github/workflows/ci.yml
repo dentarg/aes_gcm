@@ -19,3 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: crystal tool format --check
+
+  sequel-compat:
+    runs-on: ubuntu-latest
+    container: 84codes/crystal:latest-ubuntu-noble
+    steps:
+      - uses: actions/checkout@v6
+      - run: shards install
+      - run: apt-get update && apt-get install -y ruby ruby-dev build-essential
+      - run: gem install sequel sqlite3
+      - run: ruby ci/sequel_compat/encrypt.rb | crystal run ci/sequel_compat/decrypt.cr
