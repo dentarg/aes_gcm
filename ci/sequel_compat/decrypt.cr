@@ -11,17 +11,18 @@ failures = 0
 data.as_a.each do |entry|
   plaintext = entry["plaintext"].as_s
   encrypted = entry["encrypted"].as_s
+  format = entry["format"].as_s
 
   begin
     result = AesGcm::SequelColumnEncryption.decrypt(encrypted, key)
     if result == plaintext
-      puts "at=info msg=pass plaintext=#{plaintext.inspect}"
+      puts "at=info msg=pass format=#{format} plaintext=#{plaintext.inspect}"
     else
-      puts "at=error msg=mismatch expected=#{plaintext.inspect} got=#{result.inspect}"
+      puts "at=error msg=mismatch format=#{format} expected=#{plaintext.inspect} got=#{result.inspect}"
       failures += 1
     end
   rescue ex
-    puts "at=error msg=decrypt_failed plaintext=#{plaintext.inspect} error=#{ex.message}"
+    puts "at=error msg=decrypt_failed format=#{format} plaintext=#{plaintext.inspect} error=#{ex.message}"
     failures += 1
   end
 end
