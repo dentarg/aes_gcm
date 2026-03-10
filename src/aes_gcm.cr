@@ -282,86 +282,12 @@ module AesGcm
     #
     # Raises: DecryptionError if data is invalid or decryption fails
     def self.decrypt(data_base64 : String, key : String | Bytes, remove_padding : Bool = true) : String
-      # Convert key to bytes
-      key_bytes = key.is_a?(String) ? key.to_slice : key
-
-      # Decode from URL-safe base64
       begin
-        data = Base64.decode(data_base64.tr("-_", "+/"))
+        data = decode_base64(data_base64)
       rescue ex
         raise DecryptionError.new("Invalid base64 encoding: #{ex.message}")
       end
-
-      # Parse header
-      if data.size < 4
-        raise DecryptionError.new("Encrypted data too small (minimum 4 bytes for header)")
-      end
-
-      flags = data[0]
-      _version = data[1]
-      key_id = data[2]
-      _reserved = data[3]
-
-      # Determine offset based on flags
-      offset = case flags
-               when NOT_SEARCHABLE
-                 if data.size < MIN_SIZE_NOT_SEARCHABLE
-                   raise DecryptionError.new("Encrypted data too small for NOT_SEARCHABLE format (minimum #{MIN_SIZE_NOT_SEARCHABLE} bytes)")
-                 end
-                 4
-               when SEARCHABLE, LOWERCASE_SEARCHABLE
-                 if data.size < MIN_SIZE_SEARCHABLE
-                   raise DecryptionError.new("Encrypted data too small for SEARCHABLE format (minimum #{MIN_SIZE_SEARCHABLE} bytes)")
-                 end
-                 36
-               else
-                 raise DecryptionError.new("Invalid encryption flags: #{flags}")
-               end
-
-      # Validate data size
-      required_size = offset + KEY_PART_SIZE + IV_SIZE + TAG_SIZE
-      if data.size < required_size
-        raise DecryptionError.new("Encrypted data too small (need at least #{required_size} bytes)")
-      end
-
-      # Extract encryption components
-      key_part = data[offset, KEY_PART_SIZE]
-      cipher_iv = data[offset + KEY_PART_SIZE, IV_SIZE]
-      auth_tag = data[offset + KEY_PART_SIZE + IV_SIZE, TAG_SIZE]
-      ciphertext = data[offset + KEY_PART_SIZE + IV_SIZE + TAG_SIZE..]
-
-      # Derive cipher key using HMAC-SHA256
-      cipher_key = OpenSSL::HMAC.digest(:sha256, key_bytes, key_part)
-
-      # Decrypt using AES-256-GCM
-      cipher = AesGcm::Cipher.new
-      begin
-        decrypted_bytes = cipher.decrypt(
-          key: cipher_key,
-          ciphertext: ciphertext,
-          iv: cipher_iv,
-          auth_tag: auth_tag
-        )
-      rescue ex : OpenSSL::Cipher::Error
-        raise DecryptionError.new("Decryption failed: #{ex.message} (check encryption key)")
-      end
-
-      # Remove Sequel padding if requested
-      if remove_padding
-        if decrypted_bytes.size < 1
-          raise DecryptionError.new("Decrypted data too small to contain padding information")
-        end
-
-        padding_length = decrypted_bytes[0].to_i
-        if padding_length + 1 > decrypted_bytes.size
-          raise DecryptionError.new("Invalid padding length: #{padding_length}")
-        end
-
-        final_data = decrypted_bytes[padding_length + 1..]
-        String.new(final_data)
-      else
-        String.new(decrypted_bytes)
-      end
+      decrypt_bytes(data, key, remove_padding)
     end
 
     # Decrypt data and return detailed information about the encryption format
@@ -377,8 +303,11 @@ module AesGcm
       key_id: UInt8,
       searchable: Bool,
       format: String)
-      # Decode to get header info
-      data = Base64.decode(data_base64.tr("-_", "+/"))
+      begin
+        data = decode_base64(data_base64)
+      rescue ex
+        raise DecryptionError.new("Invalid base64 encoding: #{ex.message}")
+      end
 
       flags = data[0]
       key_id = data[2]
@@ -396,7 +325,7 @@ module AesGcm
 
       searchable = flags == SEARCHABLE || flags == LOWERCASE_SEARCHABLE
 
-      plaintext = decrypt(data_base64, key)
+      plaintext = decrypt_bytes(data, key)
 
       {
         plaintext:  plaintext,
@@ -414,7 +343,7 @@ module AesGcm
       return false if data_base64.empty?
 
       begin
-        data = Base64.decode(data_base64.tr("-_", "+/"))
+        data = decode_base64(data_base64)
         return false if data.size < 4
 
         flags = data[0]
@@ -430,6 +359,77 @@ module AesGcm
         end
       rescue
         false
+      end
+    end
+
+    private def self.decode_base64(encoded : String) : Bytes
+      Base64.decode(encoded.tr("-_", "+/"))
+    end
+
+    private def self.decrypt_bytes(data : Bytes, key : String | Bytes, remove_padding : Bool = true) : String
+      key_bytes = key.is_a?(String) ? key.to_slice : key
+
+      if data.size < 4
+        raise DecryptionError.new("Encrypted data too small (minimum 4 bytes for header)")
+      end
+
+      flags = data[0]
+      _version = data[1]
+      _key_id = data[2]
+      _reserved = data[3]
+
+      offset = case flags
+               when NOT_SEARCHABLE
+                 if data.size < MIN_SIZE_NOT_SEARCHABLE
+                   raise DecryptionError.new("Encrypted data too small for NOT_SEARCHABLE format (minimum #{MIN_SIZE_NOT_SEARCHABLE} bytes)")
+                 end
+                 4
+               when SEARCHABLE, LOWERCASE_SEARCHABLE
+                 if data.size < MIN_SIZE_SEARCHABLE
+                   raise DecryptionError.new("Encrypted data too small for SEARCHABLE format (minimum #{MIN_SIZE_SEARCHABLE} bytes)")
+                 end
+                 36
+               else
+                 raise DecryptionError.new("Invalid encryption flags: #{flags}")
+               end
+
+      required_size = offset + KEY_PART_SIZE + IV_SIZE + TAG_SIZE
+      if data.size < required_size
+        raise DecryptionError.new("Encrypted data too small (need at least #{required_size} bytes)")
+      end
+
+      key_part = data[offset, KEY_PART_SIZE]
+      cipher_iv = data[offset + KEY_PART_SIZE, IV_SIZE]
+      auth_tag = data[offset + KEY_PART_SIZE + IV_SIZE, TAG_SIZE]
+      ciphertext = data[offset + KEY_PART_SIZE + IV_SIZE + TAG_SIZE..]
+
+      cipher_key = OpenSSL::HMAC.digest(:sha256, key_bytes, key_part)
+
+      cipher = AesGcm::Cipher.new
+      begin
+        decrypted_bytes = cipher.decrypt(
+          key: cipher_key,
+          ciphertext: ciphertext,
+          iv: cipher_iv,
+          auth_tag: auth_tag
+        )
+      rescue ex : OpenSSL::Cipher::Error
+        raise DecryptionError.new("Decryption failed: #{ex.message} (check encryption key)")
+      end
+
+      if remove_padding
+        if decrypted_bytes.size < 1
+          raise DecryptionError.new("Decrypted data too small to contain padding information")
+        end
+
+        padding_length = decrypted_bytes[0].to_i
+        if padding_length + 1 > decrypted_bytes.size
+          raise DecryptionError.new("Invalid padding length: #{padding_length}")
+        end
+
+        String.new(decrypted_bytes[padding_length + 1..])
+      else
+        String.new(decrypted_bytes)
       end
     end
   end
