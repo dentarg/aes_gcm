@@ -70,17 +70,8 @@ describe AesGcm::SequelColumnEncryption do
       info[:format].should eq("not_searchable")
     end
 
-    it "detects searchable format" do
-      # Create a mock searchable format (flags = 1)
-      # For this test, we'll just check the format detection logic
-      data = Bytes.new(100, 0_u8)
-      data[0] = 1_u8 # SEARCHABLE flag
-      data[2] = 0_u8 # key_id
-
-      # Since we can't easily create valid searchable encrypted data,
-      # we'll test with the existing data and check the format detection
-      # separately
-    end
+    # Searchable format decryption is tested end-to-end in ci/sequel_compat/
+    # using actual Ruby Sequel-encrypted data (all three format variants).
   end
 
   describe ".valid_format?" do

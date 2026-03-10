@@ -85,6 +85,16 @@ describe AesGcm::Cipher do
       end
     end
 
+    it "encrypts and decrypts empty plaintext" do
+      cipher = AesGcm::Cipher.new
+      key = "12345678901234567890123456789012"
+
+      encrypted = cipher.encrypt(key: key, plaintext: "")
+      decrypted = cipher.decrypt(encrypted, key)
+
+      String.new(decrypted).should eq("")
+    end
+
     it "validates key size" do
       cipher = AesGcm::Cipher.new
       short_key = "short"
