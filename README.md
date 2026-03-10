@@ -11,7 +11,6 @@ A Crystal shard providing AES-256-GCM (Galois/Counter Mode) authenticated encryp
 - ✅ Base64 encoding/decoding helpers
 - ✅ Direct bindings to OpenSSL for full GCM support
 - ✅ Type-safe API with Crystal's type system
-- ✅ 29 comprehensive specs
 
 ## Why This Shard?
 
@@ -24,7 +23,7 @@ Add this to your application's `shard.yml`:
 ```yaml
 dependencies:
   aes_gcm:
-    path: ./shard
+    github: dentarg/aes_gcm
 ```
 
 Then run:

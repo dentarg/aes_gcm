@@ -16,7 +16,7 @@ plaintext = AesGcm::SequelColumnEncryption.decrypt(encrypted, key)
 
 ## What is Sequel Column Encryption?
 
-[sequel-column-encryption](https://github.com/aaronvegh/sequel-column-encryption) is a Ruby gem that provides transparent AES-256-GCM encryption for Sequel database columns. It's commonly used to encrypt sensitive data like:
+The [Sequel `column_encryption` plugin](https://github.com/jeremyevans/sequel/blob/master/lib/sequel/plugins/column_encryption.rb) is a built-in Sequel plugin by Jeremy Evans that provides transparent AES-256-GCM encryption for database columns. It's commonly used to encrypt sensitive data like:
 
 - Personal Identifiable Information (PII)
 - Credit card numbers

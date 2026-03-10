@@ -2,12 +2,15 @@ name: aes_gcm
 version: 0.1.0
 
 authors:
-  - Your Name <your.email@example.com>
+  - Patrik Ragnarsson <patrik@starkast.net>
 
-crystal: ">= 1.0.0"
+crystal: ">= 1.19.1"
 
 license: MIT
 
 description: |
   A Crystal shard providing AES-256-GCM authenticated encryption and decryption.
   Includes support for authentication tags.
+
+repository: https://github.com/dentarg/aes_gcm
+homepage: https://github.com/dentarg/aes_gcm
