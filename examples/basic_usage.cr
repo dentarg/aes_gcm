@@ -27,7 +27,7 @@ puts "  Base64:         #{encrypted.to_base64}"
 puts
 
 # Decrypt
-decrypted = cipher.decrypt(encrypted)
+decrypted = cipher.decrypt(encrypted, key)
 puts "Decrypted message: #{String.new(decrypted)}"
 puts
 

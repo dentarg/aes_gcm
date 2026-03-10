@@ -83,7 +83,7 @@ puts encrypted.auth_tag.hexstring   # Authentication tag
 puts encrypted.ciphertext.hexstring # Encrypted data
 
 # Decrypt
-decrypted = cipher.decrypt(encrypted)
+decrypted = cipher.decrypt(encrypted, key)
 puts String.new(decrypted)  # "Hello, World!"
 ```
 
@@ -168,7 +168,7 @@ Main cipher class for AES-256-GCM operations.
   - Decrypts ciphertext and verifies authenticity
   - Raises `OpenSSL::Cipher::Error` if authentication fails
 
-- `decrypt(encrypted : EncryptedData) : Bytes`
+- `decrypt(encrypted : EncryptedData, key : String | Bytes) : Bytes`
   - Convenience method to decrypt from EncryptedData struct
 
 - `encrypt_base64(key, plaintext) : String`
@@ -186,12 +186,11 @@ Struct containing all components needed for decryption.
 - `ciphertext : Bytes` - Encrypted data
 - `iv : Bytes` - Initialization vector
 - `auth_tag : Bytes` - Authentication tag
-- `key : Bytes` - Encryption key
 
 #### Methods
 
 - `to_base64 : String` - Encode all components to URL-safe base64
-- `self.from_base64(encoded, key, iv_size = 12, tag_size = 16) : EncryptedData`
+- `self.from_base64(encoded, iv_size = 12, tag_size = 16) : EncryptedData`
 
 ## Security Notes
 

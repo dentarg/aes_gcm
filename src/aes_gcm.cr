@@ -20,12 +20,7 @@ require "base64"
 # )
 #
 # # Decryption
-# decrypted = cipher.decrypt(
-#   key: encrypted.key,
-#   ciphertext: encrypted.ciphertext,
-#   iv: encrypted.iv,
-#   auth_tag: encrypted.auth_tag
-# )
+# decrypted = cipher.decrypt(encrypted, key: "32_byte_key_here_____________")
 # ```
 module AesGcm
   VERSION = "0.1.0"
@@ -45,14 +40,14 @@ module AesGcm
     ) : Int32
   end
 
-  # Represents encrypted data with all necessary components for decryption
+  # Represents encrypted data with all necessary components for decryption.
+  # The key is intentionally not stored here — pass it explicitly to decrypt.
   struct EncryptedData
     property ciphertext : Bytes
     property iv : Bytes
     property auth_tag : Bytes
-    property key : Bytes
 
-    def initialize(@ciphertext, @iv, @auth_tag, @key)
+    def initialize(@ciphertext, @iv, @auth_tag)
     end
 
     # Convert to URL-safe base64 encoded string (all components concatenated)
@@ -65,7 +60,7 @@ module AesGcm
     end
 
     # Parse from URL-safe base64 encoded string
-    def self.from_base64(encoded : String, key : String | Bytes, iv_size : Int32 = 12, tag_size : Int32 = 16) : EncryptedData
+    def self.from_base64(encoded : String, iv_size : Int32 = 12, tag_size : Int32 = 16) : EncryptedData
       data = Base64.decode(encoded.tr("-_", "+/"))
 
       if data.size < iv_size + tag_size
@@ -76,9 +71,7 @@ module AesGcm
       auth_tag = data[iv_size, tag_size]
       ciphertext = data[iv_size + tag_size..]
 
-      key_bytes = key.is_a?(String) ? key.to_slice : key
-
-      new(ciphertext, iv, auth_tag, key_bytes)
+      new(ciphertext, iv, auth_tag)
     end
   end
 
@@ -98,7 +91,7 @@ module AesGcm
     # - plaintext: Data to encrypt (String or Bytes)
     # - iv: Optional initialization vector (defaults to random)
     #
-    # Returns: EncryptedData containing ciphertext, iv, auth_tag, and key
+    # Returns: EncryptedData containing ciphertext, iv, and auth_tag
     def encrypt(
       key : String | Bytes,
       plaintext : String | Bytes,
@@ -133,8 +126,7 @@ module AesGcm
       EncryptedData.new(
         ciphertext: ciphertext.to_slice,
         iv: iv_bytes,
-        auth_tag: auth_tag,
-        key: key_bytes
+        auth_tag: auth_tag
       )
     end
 
@@ -185,9 +177,9 @@ module AesGcm
     end
 
     # Decrypt from EncryptedData struct
-    def decrypt(encrypted : EncryptedData) : Bytes
+    def decrypt(encrypted : EncryptedData, key : String | Bytes) : Bytes
       decrypt(
-        key: encrypted.key,
+        key: key,
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
         auth_tag: encrypted.auth_tag
@@ -208,8 +200,8 @@ module AesGcm
       encoded : String,
       key : String | Bytes,
     ) : Bytes
-      encrypted = EncryptedData.from_base64(encoded, key, @iv_size, @tag_size)
-      decrypt(encrypted)
+      encrypted = EncryptedData.from_base64(encoded, @iv_size, @tag_size)
+      decrypt(encrypted, key)
     end
 
     # Set the authentication tag on the cipher (for decryption)

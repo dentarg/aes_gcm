@@ -9,7 +9,7 @@ describe AesGcm::Cipher do
       plaintext = "Hello, World!"
 
       encrypted = cipher.encrypt(key: key, plaintext: plaintext)
-      decrypted = cipher.decrypt(encrypted)
+      decrypted = cipher.decrypt(encrypted, key)
 
       String.new(decrypted).should eq(plaintext)
     end
@@ -21,7 +21,7 @@ describe AesGcm::Cipher do
       plaintext = Bytes[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
       encrypted = cipher.encrypt(key: key, plaintext: plaintext)
-      decrypted = cipher.decrypt(encrypted)
+      decrypted = cipher.decrypt(encrypted, key)
 
       decrypted.should eq(plaintext)
     end
@@ -116,7 +116,7 @@ describe AesGcm::Cipher do
 
       encrypted.iv.should eq(custom_iv)
 
-      decrypted = cipher.decrypt(encrypted)
+      decrypted = cipher.decrypt(encrypted, key)
       String.new(decrypted).should eq(plaintext)
     end
   end
@@ -156,7 +156,7 @@ describe AesGcm::Cipher do
         encrypted = cipher.encrypt(key: key, plaintext: plaintext)
         encoded = encrypted.to_base64
 
-        decoded = AesGcm::EncryptedData.from_base64(encoded, key)
+        decoded = AesGcm::EncryptedData.from_base64(encoded)
 
         decoded.iv.should eq(encrypted.iv)
         decoded.auth_tag.should eq(encrypted.auth_tag)
