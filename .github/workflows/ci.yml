@@ -3,31 +3,56 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 8-14 * 1" # First Monday of the second week, 06:00 UTC
 
 jobs:
   spec:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crystal-version:
+          - "1.19.1"
+          - latest
+          - nightly
     steps:
       - uses: actions/checkout@v6
       - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: ${{ matrix.crystal-version }}
       - run: shards install
       - run: crystal spec --order random
 
   format:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crystal-version:
+          - latest
     steps:
       - uses: actions/checkout@v6
       - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: ${{ matrix.crystal-version }}
       - run: crystal tool format --check
 
   sequel-compat:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crystal-version:
+          - latest
+        ruby-version:
+          - "3.4"
+          - "4.0"
     steps:
       - uses: actions/checkout@v6
       - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: ${{ matrix.crystal-version }}
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: false
       - run: gem install sequel sqlite3
       - run: shards install
