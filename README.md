@@ -73,7 +73,8 @@ plaintext = "Hello, World!"
 # Encrypt
 encrypted = cipher.encrypt(
   key: key,
-  plaintext: plaintext
+  plaintext: plaintext,
+  aad: "record-id:123"
 )
 
 # Access encrypted components
@@ -82,7 +83,7 @@ puts encrypted.auth_tag.hexstring   # Authentication tag
 puts encrypted.ciphertext.hexstring # Encrypted data
 
 # Decrypt
-decrypted = cipher.decrypt(encrypted, key)
+decrypted = cipher.decrypt(encrypted, key, aad: "record-id:123")
 puts String.new(decrypted)  # "Hello, World!"
 ```
 
@@ -162,9 +163,11 @@ Main cipher class for AES-256-GCM operations.
   - `key`: 32-byte encryption key (String or Bytes)
   - `plaintext`: Data to encrypt (String or Bytes)
   - `iv`: Optional IV (defaults to random)
+  - `aad`: Optional additional authenticated data
 
-- `decrypt(key, ciphertext, iv, auth_tag) : Bytes`
+- `decrypt(key, ciphertext, iv, auth_tag, aad = nil) : Bytes`
   - Decrypts ciphertext and verifies authenticity
+  - Verifies optional additional authenticated data when provided
   - Raises `OpenSSL::Cipher::Error` if authentication fails
 
 - `decrypt(encrypted : EncryptedData, key : String | Bytes) : Bytes`

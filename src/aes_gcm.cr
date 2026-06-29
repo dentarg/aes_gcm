@@ -91,12 +91,14 @@ module AesGcm
     # - key: 32-byte encryption key (String or Bytes)
     # - plaintext: Data to encrypt (String or Bytes)
     # - iv: Optional initialization vector (defaults to random)
+    # - aad: Optional additional authenticated data
     #
     # Returns: EncryptedData containing ciphertext, iv, and auth_tag
     def encrypt(
       key : String | Bytes,
       plaintext : String | Bytes,
       iv : Bytes? = nil,
+      aad : String | Bytes | Nil = nil,
     ) : EncryptedData
       # Convert inputs to bytes
       key_bytes = key.is_a?(String) ? key.to_slice : key
@@ -115,6 +117,7 @@ module AesGcm
       cipher.encrypt
       cipher.key = key_bytes
       cipher.iv = iv_bytes
+      set_additional_authenticated_data(cipher, aad)
 
       # Encrypt
       ciphertext = IO::Memory.new
@@ -138,6 +141,7 @@ module AesGcm
     # - ciphertext: Encrypted data (Bytes)
     # - iv: Initialization vector used during encryption
     # - auth_tag: Authentication tag from encryption
+    # - aad: Optional additional authenticated data
     #
     # Returns: Decrypted data as Bytes
     # Raises: OpenSSL::Cipher::Error if authentication fails or data is corrupted
@@ -146,6 +150,7 @@ module AesGcm
       ciphertext : Bytes,
       iv : Bytes,
       auth_tag : Bytes,
+      aad : String | Bytes | Nil = nil,
     ) : Bytes
       # Convert inputs to bytes
       key_bytes = key.is_a?(String) ? key.to_slice : key
@@ -160,6 +165,7 @@ module AesGcm
       cipher.decrypt
       cipher.key = key_bytes
       cipher.iv = iv
+      set_additional_authenticated_data(cipher, aad)
 
       # Set authentication tag (must be done before decryption)
       set_auth_tag(cipher, auth_tag)
@@ -178,12 +184,17 @@ module AesGcm
     end
 
     # Decrypt from EncryptedData struct
-    def decrypt(encrypted : EncryptedData, key : String | Bytes) : Bytes
+    def decrypt(
+      encrypted : EncryptedData,
+      key : String | Bytes,
+      aad : String | Bytes | Nil = nil,
+    ) : Bytes
       decrypt(
         key: key,
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
-        auth_tag: encrypted.auth_tag
+        auth_tag: encrypted.auth_tag,
+        aad: aad
       )
     end
 
@@ -191,8 +202,9 @@ module AesGcm
     def encrypt_base64(
       key : String | Bytes,
       plaintext : String | Bytes,
+      aad : String | Bytes | Nil = nil,
     ) : String
-      encrypted = encrypt(key: key, plaintext: plaintext)
+      encrypted = encrypt(key: key, plaintext: plaintext, aad: aad)
       encrypted.to_base64
     end
 
@@ -200,9 +212,34 @@ module AesGcm
     def decrypt_base64(
       encoded : String,
       key : String | Bytes,
+      aad : String | Bytes | Nil = nil,
     ) : Bytes
       encrypted = EncryptedData.from_base64(encoded, @iv_size, @tag_size)
-      decrypt(encrypted, key)
+      decrypt(encrypted, key, aad: aad)
+    end
+
+    # Add authenticated but unencrypted data to the cipher.
+    private def set_additional_authenticated_data(
+      cipher : OpenSSL::Cipher,
+      aad : String | Bytes | Nil,
+    ) : Nil
+      return unless aad
+
+      aad_bytes = aad.is_a?(String) ? aad.to_slice : aad
+      return if aad_bytes.empty?
+
+      bytes_written = 0
+      result = ::LibCrypto.evp_cipherupdate(
+        cipher.@ctx,
+        Pointer(UInt8).null,
+        pointerof(bytes_written),
+        aad_bytes.to_unsafe,
+        aad_bytes.size
+      )
+
+      if result != 1
+        raise OpenSSL::Cipher::Error.new("Failed to set additional authenticated data")
+      end
     end
 
     # Set the authentication tag on the cipher (for decryption)

@@ -129,6 +129,42 @@ describe AesGcm::Cipher do
       decrypted = cipher.decrypt(encrypted, key)
       String.new(decrypted).should eq(plaintext)
     end
+
+    it "authenticates additional data" do
+      cipher = AesGcm::Cipher.new
+      key = "12345678901234567890123456789012"
+      plaintext = "secret"
+      aad = "transfer-id:chunk-1"
+
+      encrypted = cipher.encrypt(key: key, plaintext: plaintext, aad: aad)
+      decrypted = cipher.decrypt(encrypted, key, aad: aad)
+
+      String.new(decrypted).should eq(plaintext)
+    end
+
+    it "fails with missing additional data" do
+      cipher = AesGcm::Cipher.new
+      key = "12345678901234567890123456789012"
+      plaintext = "secret"
+
+      encrypted = cipher.encrypt(key: key, plaintext: plaintext, aad: "metadata")
+
+      expect_raises(OpenSSL::Cipher::Error, /authentication verification failed/) do
+        cipher.decrypt(encrypted, key)
+      end
+    end
+
+    it "fails with wrong additional data" do
+      cipher = AesGcm::Cipher.new
+      key = "12345678901234567890123456789012"
+      plaintext = "secret"
+
+      encrypted = cipher.encrypt(key: key, plaintext: plaintext, aad: "metadata")
+
+      expect_raises(OpenSSL::Cipher::Error, /authentication verification failed/) do
+        cipher.decrypt(encrypted, key, aad: "other metadata")
+      end
+    end
   end
 
   describe "#encrypt_base64 and #decrypt_base64" do
